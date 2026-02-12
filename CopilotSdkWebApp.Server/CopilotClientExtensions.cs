@@ -4,8 +4,9 @@ namespace Microsoft.Extensions.Hosting;
 
 /// <summary>
 /// Factory for creating per-user <see cref="CopilotClient"/> instances.
+/// Each client spawns its own Copilot CLI process authenticated with the user's token.
 /// </summary>
-public class CopilotClientFactory(string cliUrl)
+public class CopilotClientFactory
 {
     /// <summary>
     /// Creates a <see cref="CopilotClient"/> authenticated with the given GitHub token.
@@ -14,8 +15,6 @@ public class CopilotClientFactory(string cliUrl)
     {
         return new CopilotClient(new CopilotClientOptions
         {
-            CliUrl = cliUrl,
-            UseStdio = false,
             GithubToken = githubToken,
             UseLoggedInUser = false,
         });
@@ -23,23 +22,15 @@ public class CopilotClientFactory(string cliUrl)
 }
 
 /// <summary>
-/// Extension methods for registering the Copilot SDK client via Aspire.
+/// Extension methods for registering the Copilot SDK client factory.
 /// </summary>
 public static class CopilotClientExtensions
 {
     /// <summary>
-    /// Adds a <see cref="CopilotClientFactory"/> to the service collection,
-    /// configured from Aspire service discovery for the named resource.
+    /// Adds a <see cref="CopilotClientFactory"/> to the service collection.
     /// </summary>
-    public static void AddCopilotClient(this IHostApplicationBuilder builder, string serviceName = "copilot")
+    public static void AddCopilotClient(this IHostApplicationBuilder builder)
     {
-        var url = builder.Configuration[$"services:{serviceName}:http:0"]
-            ?? throw new InvalidOperationException(
-                $"Service endpoint '{serviceName}' not found. Ensure the Copilot CLI resource is referenced in the AppHost.");
-
-        var uri = new Uri(url);
-        var cliUrl = $"{uri.Host}:{uri.Port}";
-
-        builder.Services.AddSingleton(new CopilotClientFactory(cliUrl));
+        builder.Services.AddSingleton<CopilotClientFactory>();
     }
 }

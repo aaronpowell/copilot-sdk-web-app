@@ -10,7 +10,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\CopilotSdkWebApp.Server\CopilotSdkWebApp.Server.csproj" />
-    <ProjectReference Include="..\CopilotSdkWebApp.Hosting\CopilotSdkWebApp.Hosting.csproj" IsAspireProjectResource="false" />
   </ItemGroup>
 
   <ItemGroup>
