@@ -6,18 +6,22 @@ A full-stack chat application built with the [GitHub Copilot SDK](https://github
 
 ## Architecture
 
-```
-┌──────────────────────────────────────────────────┐
-│                  Aspire AppHost                   │
-│  Orchestrates all resources, secrets, and config  │
-├────────────────────┬─────────────────────────────┤
-│  React Frontend    │  ASP.NET Core API Server     │
-│  (Vite + TS)       │  ┌───────────────────────┐  │
-│                    │  │ GitHub OAuth           │  │
-│  • Chat UI         │  │ Copilot SDK (per-user) │  │
-│  • Session sidebar │  │ Session management     │  │
-│  • Model picker    │  └───────────────────────┘  │
-└────────────────────┴─────────────────────────────┘
+```mermaid
+graph TD
+    subgraph Aspire AppHost
+        direction TB
+        Params[/"GitHub OAuth Secrets"/]
+        Server["ASP.NET Core API Server"]
+        Frontend["React Frontend<br/>(Vite + TypeScript)"]
+    end
+
+    User((User)) -->|Browser| Frontend
+    Frontend -->|/api/*| Server
+    Server -->|OAuth| GitHub[GitHub OAuth]
+    Server -->|Per-user CLI process| SDK["Copilot SDK<br/>(GitHub.Copilot.SDK)"]
+    SDK -->|JSON-RPC| CLI["Copilot CLI"]
+    CLI -->|API| Models["Copilot Models<br/>(GPT-4.1, Claude, etc.)"]
+    Params -.->|env vars| Server
 ```
 
 Each authenticated user gets their own Copilot CLI process via the SDK, with sessions persisted by the Copilot runtime.
