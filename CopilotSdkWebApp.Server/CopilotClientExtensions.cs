@@ -15,20 +15,20 @@ public static class CopilotClientExtensions
     /// <param name="serviceName">The Aspire resource name (default: "copilot").</param>
     public static void AddCopilotClient(this IHostApplicationBuilder builder, string serviceName = "copilot")
     {
-        builder.Services.AddHttpClient(serviceName, client =>
-        {
-            client.BaseAddress = new Uri($"http://{serviceName}");
-        });
-
         builder.Services.AddSingleton(sp =>
         {
-            var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
-            var httpClient = httpClientFactory.CreateClient(serviceName);
-            var cliUrl = $"{httpClient.BaseAddress!.Host}:{httpClient.BaseAddress.Port}";
+            // Aspire injects the resolved endpoint as services:{name}:{scheme}:{index} in configuration
+            var url = builder.Configuration[$"services:{serviceName}:http:0"]
+                ?? throw new InvalidOperationException(
+                    $"Service endpoint '{serviceName}' not found. Ensure the Copilot CLI resource is referenced in the AppHost.");
+
+            var uri = new Uri(url);
+            var cliUrl = $"{uri.Host}:{uri.Port}";
 
             return new CopilotClient(new CopilotClientOptions
             {
                 CliUrl = cliUrl,
+                UseStdio = false,
             });
         });
     }
