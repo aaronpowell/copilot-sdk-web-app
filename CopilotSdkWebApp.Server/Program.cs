@@ -1,3 +1,8 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.OAuth;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add service defaults & Aspire client integrations.
@@ -6,9 +11,58 @@ builder.AddCopilotClient();
 
 // Add services to the container.
 builder.Services.AddProblemDetails();
-
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
+
+// Configure GitHub OAuth authentication
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+    options.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = "GitHub";
+})
+.AddCookie(options =>
+{
+    options.LoginPath = "/auth/login";
+    options.LogoutPath = "/auth/logout";
+    options.Events.OnRedirectToLogin = context =>
+    {
+        context.Response.StatusCode = 401;
+        return Task.CompletedTask;
+    };
+})
+.AddOAuth("GitHub", options =>
+{
+    options.ClientId = builder.Configuration["GitHub:ClientId"] ?? throw new InvalidOperationException("GitHub:ClientId is required");
+    options.ClientSecret = builder.Configuration["GitHub:ClientSecret"] ?? throw new InvalidOperationException("GitHub:ClientSecret is required");
+    options.AuthorizationEndpoint = "https://github.com/login/oauth/authorize";
+    options.TokenEndpoint = "https://github.com/login/oauth/access_token";
+    options.UserInformationEndpoint = "https://api.github.com/user";
+    options.CallbackPath = "/auth/callback";
+    options.Scope.Add("copilot");
+    options.SaveTokens = true;
+
+    options.ClaimActions.MapJsonKey(ClaimTypes.NameIdentifier, "id");
+    options.ClaimActions.MapJsonKey(ClaimTypes.Name, "login");
+    options.ClaimActions.MapJsonKey("urn:github:avatar", "avatar_url");
+
+    options.Events = new OAuthEvents
+    {
+        OnCreatingTicket = async context =>
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Get, context.Options.UserInformationEndpoint);
+            request.Headers.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", context.AccessToken);
+
+            using var response = await context.Backchannel.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, context.HttpContext.RequestAborted);
+            response.EnsureSuccessStatusCode();
+
+            var user = await response.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+            context.RunClaimActions(user);
+        }
+    };
+});
+
+builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
@@ -20,11 +74,41 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
+app.UseAuthentication();
+app.UseAuthorization();
 
-var api = app.MapGroup("/api");
+// Auth endpoints
+app.MapGet("/auth/login", (HttpContext context) =>
+    Results.Challenge(new AuthenticationProperties { RedirectUri = "/" }, ["GitHub"]));
 
-api.MapPost("chat", async (ChatRequest request, GitHub.Copilot.SDK.CopilotClient copilotClient) =>
+app.MapPost("/auth/logout", async (HttpContext context) =>
 {
+    await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+    return Results.Ok();
+});
+
+app.MapGet("/auth/user", (HttpContext context) =>
+{
+    if (context.User.Identity?.IsAuthenticated != true)
+        return Results.Json(new { authenticated = false });
+
+    return Results.Json(new
+    {
+        authenticated = true,
+        name = context.User.FindFirstValue(ClaimTypes.Name),
+        avatar = context.User.FindFirstValue("urn:github:avatar")
+    });
+});
+
+// API endpoints (require auth)
+var api = app.MapGroup("/api").RequireAuthorization();
+
+api.MapPost("chat", async (ChatRequest request, CopilotClientFactory factory, HttpContext context) =>
+{
+    var token = await context.GetTokenAsync("access_token")
+        ?? throw new InvalidOperationException("No access token found");
+
+    await using var copilotClient = factory.Create(token);
     await using var session = await copilotClient.CreateSessionAsync(new GitHub.Copilot.SDK.SessionConfig
     {
         Model = request.Model ?? "gpt-5"
@@ -56,8 +140,12 @@ api.MapPost("chat", async (ChatRequest request, GitHub.Copilot.SDK.CopilotClient
 })
 .WithName("Chat");
 
-api.MapGet("models", async (GitHub.Copilot.SDK.CopilotClient copilotClient) =>
+api.MapGet("models", async (CopilotClientFactory factory, HttpContext context) =>
 {
+    var token = await context.GetTokenAsync("access_token")
+        ?? throw new InvalidOperationException("No access token found");
+
+    await using var copilotClient = factory.Create(token);
     var models = await copilotClient.ListModelsAsync();
     return TypedResults.Ok(models);
 })

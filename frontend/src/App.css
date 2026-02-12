@@ -792,6 +792,74 @@
   outline-offset: 2px;
 }
 
+/* Auth styles */
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.user-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+}
+
+.user-name {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.logout-button {
+  background: transparent;
+  border: 1px solid var(--weather-card-border);
+  color: var(--text-tertiary);
+  border-radius: 6px;
+  padding: 0.25rem 0.625rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.logout-button:hover {
+  border-color: var(--text-tertiary);
+  color: var(--text-primary);
+}
+
+.login-prompt {
+  text-align: center;
+  padding: 3rem 1rem;
+}
+
+.login-prompt h2 {
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.login-prompt p {
+  color: var(--text-tertiary);
+  margin-bottom: 1.5rem;
+}
+
+.login-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #24292e;
+  color: #fff;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: background 0.2s;
+}
+
+.login-button:hover {
+  background: #2f363d;
+}
+
 /* Chat styles */
 .chat-section {
   width: 100%;

@@ -6,8 +6,12 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      // Proxy API calls to the app service
       '/api': {
+        target: process.env.SERVER_HTTPS || process.env.SERVER_HTTP,
+        changeOrigin: true,
+        secure: false
+      },
+      '/auth': {
         target: process.env.SERVER_HTTPS || process.env.SERVER_HTTP,
         changeOrigin: true,
         secure: false
