@@ -71,6 +71,13 @@ api.MapPost("chat", async (ChatRequest request, GitHub.Copilot.SDK.CopilotClient
 })
 .WithName("Chat");
 
+api.MapGet("models", async (GitHub.Copilot.SDK.CopilotClient copilotClient) =>
+{
+    var models = await copilotClient.ListModelsAsync();
+    return TypedResults.Ok(models);
+})
+.WithName("ListModels");
+
 app.MapDefaultEndpoints();
 
 app.UseFileServer();

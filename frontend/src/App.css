@@ -792,3 +792,150 @@
   outline-offset: 2px;
 }
 
+/* Chat styles */
+.chat-section {
+  width: 100%;
+}
+
+.chat-card {
+  display: flex;
+  flex-direction: column;
+  height: 500px;
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem 0;
+}
+
+.chat-empty {
+  color: var(--text-tertiary);
+  text-align: center;
+  margin: auto;
+  font-style: italic;
+}
+
+.chat-bubble {
+  max-width: 80%;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  line-height: 1.5;
+}
+
+.chat-bubble.user {
+  align-self: flex-end;
+  background: linear-gradient(135deg, var(--accent-gradient-start), var(--accent-gradient-end));
+  color: #fff;
+}
+
+.chat-bubble.assistant {
+  align-self: flex-start;
+  background: var(--weather-card-bg);
+  border: 1px solid var(--weather-card-border);
+  color: var(--text-secondary);
+}
+
+.chat-role {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.25rem;
+  opacity: 0.7;
+}
+
+.chat-content {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.chat-typing {
+  opacity: 0.6;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+.chat-input-row {
+  display: flex;
+  gap: 0.5rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--divider-color);
+}
+
+.chat-input {
+  flex: 1;
+  background: var(--weather-card-bg);
+  border: 1px solid var(--weather-card-border);
+  border-radius: 8px;
+  padding: 0.625rem 0.75rem;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  font-family: inherit;
+  resize: none;
+  outline: none;
+}
+
+.chat-input:focus {
+  border-color: var(--accent-gradient-start);
+}
+
+.chat-input::placeholder {
+  color: var(--text-tertiary);
+}
+
+.chat-send {
+  background: linear-gradient(135deg, var(--accent-gradient-start), var(--accent-gradient-end));
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.625rem 1.25rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.chat-send:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.chat-send:not(:disabled):hover {
+  opacity: 0.9;
+}
+
+.model-picker {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.model-label {
+  font-size: 0.8rem;
+  color: var(--text-tertiary);
+  font-weight: 500;
+}
+
+.model-select {
+  background: var(--weather-card-bg);
+  border: 1px solid var(--weather-card-border);
+  border-radius: 6px;
+  padding: 0.375rem 0.5rem;
+  color: var(--text-primary);
+  font-size: 0.8rem;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.model-select option {
+  background: var(--card-bg);
+  color: var(--text-primary);
+}
+

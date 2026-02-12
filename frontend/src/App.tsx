@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import aspireLogo from '/Aspire.png'
+import Chat from './Chat'
 import './App.css'
 
 interface WeatherForecast {
@@ -65,6 +66,8 @@ function App() {
       </header>
 
       <main className="main-content">
+        <Chat />
+
         <section className="weather-section" aria-labelledby="weather-heading">
           <div className="card">
             <div className="section-header">

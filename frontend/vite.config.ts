@@ -9,7 +9,8 @@ export default defineConfig({
       // Proxy API calls to the app service
       '/api': {
         target: process.env.SERVER_HTTPS || process.env.SERVER_HTTP,
-        changeOrigin: true
+        changeOrigin: true,
+        secure: false
       }
     }
   }
