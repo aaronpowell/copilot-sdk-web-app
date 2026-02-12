@@ -1,6 +1,15 @@
 @Server_HostAddress = http://localhost:5490
 
-GET {{Server_HostAddress}}/api/weatherforecast/
+POST {{Server_HostAddress}}/api/chat
+Content-Type: application/json
+
+{
+  "message": "Hello, what is 2+2?"
+}
+
+###
+
+GET {{Server_HostAddress}}/api/models
 Accept: application/json
 
 ###
