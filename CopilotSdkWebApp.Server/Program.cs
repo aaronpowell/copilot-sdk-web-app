@@ -38,6 +38,39 @@ api.MapGet("weatherforecast", () =>
 })
 .WithName("GetWeatherForecast");
 
+api.MapPost("chat", async (ChatRequest request, GitHub.Copilot.SDK.CopilotClient copilotClient) =>
+{
+    await using var session = await copilotClient.CreateSessionAsync(new GitHub.Copilot.SDK.SessionConfig
+    {
+        Model = request.Model ?? "gpt-5"
+    });
+
+    var done = new TaskCompletionSource();
+    var responseContent = "";
+
+    session.On(evt =>
+    {
+        if (evt is GitHub.Copilot.SDK.AssistantMessageEvent msg)
+        {
+            responseContent = msg.Data.Content;
+        }
+        else if (evt is GitHub.Copilot.SDK.SessionIdleEvent)
+        {
+            done.TrySetResult();
+        }
+        else if (evt is GitHub.Copilot.SDK.SessionErrorEvent err)
+        {
+            done.TrySetException(new Exception(err.Data.Message));
+        }
+    });
+
+    await session.SendAsync(new GitHub.Copilot.SDK.MessageOptions { Prompt = request.Message });
+    await done.Task;
+
+    return TypedResults.Ok(new ChatResponse(responseContent));
+})
+.WithName("Chat");
+
 app.MapDefaultEndpoints();
 
 app.UseFileServer();
@@ -48,3 +81,6 @@ record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
 {
     public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
 }
+
+record ChatRequest(string Message, string? Model = null);
+record ChatResponse(string Reply);
