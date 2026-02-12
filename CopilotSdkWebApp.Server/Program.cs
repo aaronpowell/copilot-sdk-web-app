@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using GitHub.Copilot.SDK;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OAuth;
@@ -107,38 +108,93 @@ api.MapPost("chat", async (ChatRequest request, CopilotClientFactory factory, Ht
 {
     var token = await context.GetTokenAsync("access_token")
         ?? throw new InvalidOperationException("No access token found");
+    var model = request.Model ?? "gpt-5";
 
     await using var copilotClient = factory.Create(token);
-    await using var session = await copilotClient.CreateSessionAsync(new GitHub.Copilot.SDK.SessionConfig
+
+    CopilotSession session;
+    if (string.IsNullOrEmpty(request.SessionId))
     {
-        Model = request.Model ?? "gpt-5"
-    });
+        session = await copilotClient.CreateSessionAsync(new SessionConfig { Model = model });
+    }
+    else
+    {
+        session = await copilotClient.ResumeSessionAsync(request.SessionId, new ResumeSessionConfig { Model = model });
+    }
+    await using var _ = session;
 
     var done = new TaskCompletionSource();
     var responseContent = "";
 
     session.On(evt =>
     {
-        if (evt is GitHub.Copilot.SDK.AssistantMessageEvent msg)
+        if (evt is AssistantMessageEvent msg)
         {
             responseContent = msg.Data.Content;
         }
-        else if (evt is GitHub.Copilot.SDK.SessionIdleEvent)
+        else if (evt is SessionIdleEvent)
         {
             done.TrySetResult();
         }
-        else if (evt is GitHub.Copilot.SDK.SessionErrorEvent err)
+        else if (evt is SessionErrorEvent err)
         {
             done.TrySetException(new Exception(err.Data.Message));
         }
     });
 
-    await session.SendAsync(new GitHub.Copilot.SDK.MessageOptions { Prompt = request.Message });
+    await session.SendAsync(new MessageOptions { Prompt = request.Message });
     await done.Task;
 
-    return TypedResults.Ok(new ChatResponse(responseContent));
+    return TypedResults.Ok(new ChatResponse(responseContent, session.SessionId));
 })
 .WithName("Chat");
+
+api.MapGet("sessions", async (CopilotClientFactory factory, HttpContext context) =>
+{
+    var token = await context.GetTokenAsync("access_token")
+        ?? throw new InvalidOperationException("No access token found");
+
+    await using var copilotClient = factory.Create(token);
+    var sessions = await copilotClient.ListSessionsAsync();
+    return TypedResults.Ok(sessions);
+})
+.WithName("ListSessions");
+
+api.MapGet("sessions/{sessionId}/messages", async (string sessionId, CopilotClientFactory factory, HttpContext context) =>
+{
+    var token = await context.GetTokenAsync("access_token")
+        ?? throw new InvalidOperationException("No access token found");
+
+    await using var copilotClient = factory.Create(token);
+    var session = await copilotClient.ResumeSessionAsync(sessionId);
+    await using var _ = session;
+
+    var events = await session.GetMessagesAsync();
+    var messages = events
+        .Where(e => e is UserMessageEvent or AssistantMessageEvent)
+        .Select(e => e switch
+        {
+            UserMessageEvent ume => new MessageDto("user", ume.Data.Content, ume.Timestamp),
+            AssistantMessageEvent ame => new MessageDto("assistant", ame.Data.Content, ame.Timestamp),
+            _ => null
+        })
+        .Where(m => m is not null)
+        .ToList();
+
+    return TypedResults.Ok(messages);
+})
+.WithName("GetSessionMessages");
+
+api.MapDelete("sessions/{sessionId}", async (string sessionId, CopilotClientFactory factory, HttpContext context) =>
+{
+    var token = await context.GetTokenAsync("access_token")
+        ?? throw new InvalidOperationException("No access token found");
+
+    await using var copilotClient = factory.Create(token);
+    await copilotClient.DeleteSessionAsync(sessionId);
+    return Results.NoContent();
+})
+.WithName("DeleteSession");
 
 api.MapGet("models", async (CopilotClientFactory factory, HttpContext context) =>
 {
@@ -157,5 +213,6 @@ app.UseFileServer();
 
 app.Run();
 
-record ChatRequest(string Message, string? Model = null);
-record ChatResponse(string Reply);
+record ChatRequest(string Message, string? Model = null, string? SessionId = null);
+record ChatResponse(string Reply, string SessionId);
+record MessageDto(string Role, string Content, DateTimeOffset Timestamp);

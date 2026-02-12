@@ -14,3 +14,4 @@ public class CopilotCliResource(string name)
     /// </summary>
     public EndpointReference HttpEndpoint => new(this, "http");
 }
+

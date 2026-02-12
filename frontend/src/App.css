@@ -147,7 +147,7 @@
   padding: 0rem 2rem 2rem;
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: stretch;
 }
 
 /* Card styles */
@@ -860,9 +860,198 @@
   background: #2f363d;
 }
 
-/* Chat styles */
-.chat-section {
+/* Chat layout with sidebar */
+.chat-layout {
+  display: flex;
   width: 100%;
+  gap: 1rem;
+  min-height: 0;
+}
+
+.chat-sidebar {
+  display: flex;
+  flex-direction: column;
+  background: var(--card-bg);
+  border: 1px solid var(--weather-card-border);
+  border-radius: 1rem;
+  overflow: hidden;
+  transition: width 0.2s ease;
+}
+
+.chat-sidebar.open {
+  width: 280px;
+  min-width: 280px;
+}
+
+.chat-sidebar.closed {
+  width: 48px;
+  min-width: 48px;
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--weather-card-border);
+}
+
+.sidebar-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin: 0;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.chat-sidebar.closed .sidebar-title {
+  display: none;
+}
+
+.sidebar-toggle {
+  background: transparent;
+  border: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 0.25rem;
+  border-radius: 4px;
+  line-height: 1;
+}
+
+.sidebar-toggle:hover {
+  color: var(--text-primary);
+  background: var(--weather-card-bg);
+}
+
+.sidebar-toggle.inline {
+  font-size: 1.1rem;
+  margin-right: 0.5rem;
+}
+
+.new-session-btn {
+  margin: 0.5rem 0.75rem;
+  padding: 0.5rem 0.75rem;
+  background: linear-gradient(135deg, var(--accent-gradient-start), var(--accent-gradient-end));
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.new-session-btn:hover {
+  opacity: 0.9;
+}
+
+.session-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.25rem 0.5rem;
+}
+
+.session-empty {
+  color: var(--text-tertiary);
+  font-size: 0.8rem;
+  text-align: center;
+  padding: 1rem 0;
+  font-style: italic;
+}
+
+.session-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 2px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-family: inherit;
+  transition: background 0.15s, border-color 0.15s;
+  position: relative;
+}
+
+.session-item:hover {
+  background: var(--weather-card-bg);
+  border-color: var(--weather-card-border);
+}
+
+.session-item.active {
+  background: var(--weather-card-bg);
+  border-color: var(--accent-gradient-start);
+}
+
+.session-item-title {
+  font-size: 0.82rem;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-right: 1.25rem;
+  color: var(--text-primary);
+}
+
+.session-item-meta {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 2px;
+  font-size: 0.7rem;
+  color: var(--text-tertiary);
+}
+
+.session-item-model {
+  opacity: 0.8;
+}
+
+.session-delete {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.4rem;
+  background: transparent;
+  border: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  font-size: 0.7rem;
+  padding: 2px 4px;
+  border-radius: 4px;
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s;
+}
+
+.session-item:hover .session-delete {
+  opacity: 1;
+}
+
+.session-delete:hover {
+  color: var(--error-border);
+  background: var(--error-bg);
+}
+
+.chat-header-left {
+  display: flex;
+  align-items: center;
+}
+
+.chat-section {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 768px) {
+  .chat-layout {
+    flex-direction: column;
+  }
+
+  .chat-sidebar.open {
+    width: 100%;
+    min-width: 0;
+    max-height: 200px;
+  }
 }
 
 .chat-card {
