@@ -1,0 +1,68 @@
+name: Build and Push Container
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}/copilot-sdk-web-app-sample
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+          dotnet-quality: "preview"
+
+      - name: Install Aspire CLI
+        run: dotnet tool install -g aspire && aspire --version
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: frontend
+
+      - name: Build container image
+        run: aspire do build --project CopilotSdkWebApp.AppHost/CopilotSdkWebApp.AppHost.csproj --non-interactive
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Tag and push image
+        run: |
+          IMAGE_ID=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          # Lowercase the image ID (GHCR requires lowercase)
+          IMAGE_ID=$(echo "$IMAGE_ID" | tr '[:upper:]' '[:lower:]')
+
+          # Tag with SHA and latest
+          SHA_TAG=${GITHUB_SHA::7}
+          docker tag server:latest "$IMAGE_ID:$SHA_TAG"
+          docker tag server:latest "$IMAGE_ID:latest"
+
+          docker push "$IMAGE_ID:$SHA_TAG"
+          docker push "$IMAGE_ID:latest"
+
+          echo "### Published Container Image 🐳" >> $GITHUB_STEP_SUMMARY
+          echo "- \`$IMAGE_ID:$SHA_TAG\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`$IMAGE_ID:latest\`" >> $GITHUB_STEP_SUMMARY

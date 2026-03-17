@@ -486,3 +486,4 @@ node_modules/
 dist/
 
 appsettings.*.json
+aspire-output

@@ -1,5 +1,7 @@
 var builder = DistributedApplication.CreateBuilder(args);
 
+builder.AddDockerComposeEnvironment("compose");
+
 var githubClientId = builder.AddParameter("github-client-id");
 var githubClientSecret = builder.AddParameter("github-client-secret", secret: true);
 
