@@ -15,7 +15,7 @@ public class CopilotClientFactory
     {
         return new CopilotClient(new CopilotClientOptions
         {
-            GithubToken = githubToken,
+            GitHubToken = githubToken,
             UseLoggedInUser = false,
         });
     }

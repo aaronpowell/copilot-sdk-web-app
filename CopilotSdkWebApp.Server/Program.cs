@@ -115,11 +115,11 @@ api.MapPost("chat", async (ChatRequest request, CopilotClientFactory factory, Ht
     CopilotSession session;
     if (string.IsNullOrEmpty(request.SessionId))
     {
-        session = await copilotClient.CreateSessionAsync(new SessionConfig { Model = model });
+        session = await copilotClient.CreateSessionAsync(new SessionConfig { Model = model, OnPermissionRequest = PermissionHandler.ApproveAll });
     }
     else
     {
-        session = await copilotClient.ResumeSessionAsync(request.SessionId, new ResumeSessionConfig { Model = model });
+        session = await copilotClient.ResumeSessionAsync(request.SessionId, new ResumeSessionConfig { Model = model, OnPermissionRequest = PermissionHandler.ApproveAll });
     }
     await using var _ = session;
 
@@ -166,7 +166,7 @@ api.MapGet("sessions/{sessionId}/messages", async (string sessionId, CopilotClie
         ?? throw new InvalidOperationException("No access token found");
 
     await using var copilotClient = factory.Create(token);
-    var session = await copilotClient.ResumeSessionAsync(sessionId);
+    var session = await copilotClient.ResumeSessionAsync(sessionId, new ResumeSessionConfig() { OnPermissionRequest = PermissionHandler.ApproveAll });
     await using var _ = session;
 
     var events = await session.GetMessagesAsync();
