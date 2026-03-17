@@ -28,7 +28,7 @@ jobs:
           dotnet-quality: "preview"
 
       - name: Install Aspire CLI
-        run: dotnet tool install -g aspire && aspire --version
+        uses: timheuer/setup-aspire@v1
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
